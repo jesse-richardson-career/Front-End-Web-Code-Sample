@@ -20,10 +20,16 @@ var canvasShapes = (function(){
     // when set to true, the canvas will redraw everything
     // invalidate() just sets this to false right now
     // we want to call invalidate() whenever we make a change
-   var canvasValid = false;
+    var canvasValid = false;
 
-   // keep track of the state ofwhat button is selected. Should maybe be broken out into a viewModel?
-   var selectedOption = optionStates.TRIANGLE;
+    // keep track of the state ofwhat button is selected. Should maybe be broken out into a viewModel?
+    var selectedOption = optionStates.TRIANGLE;
+
+    // variable for pan movement
+    var mouseIsDown = false; // whether mouse is pressed
+    var panStartCoords = []; // 'grab' coordinates when pressing mouse
+    var panLastCoords = [0, 0]; // previous coordinates of mouse release
+
 
    function setOption(option) {
        selectedOption = option;
@@ -101,6 +107,10 @@ var canvasShapes = (function(){
         c.clearRect(0, 0, WIDTH, HEIGHT);
     }
 
+    function invalidate() {
+        canvasValid = false;
+    }
+
     // adds a new node
     function myClick(e) {
         getMouse(e);
@@ -113,8 +123,41 @@ var canvasShapes = (function(){
         }
     }
 
-    function invalidate() {
-        canvasValid = false;
+    function myOnMouseDown(e) {
+        if(selectedOption == optionStates.PAN) {
+            mouseIsDown = true;
+
+            panStartCoords = [
+                e.offsetX - panLastCoords[0], // set start coordinates
+                e.offsetY - panLastCoords[1]
+           ];
+        }
+    };
+
+    function myOnMouseUp(e) {
+        if(selectedOption == optionStates.PAN) {
+            mouseIsDown = false;
+
+            panLastCoords = [
+                e.offsetX - panStartCoords[0], // set last coordinates
+                e.offsetY - panStartCoords[1]
+            ];
+        }
+    };
+
+    function myOnMouseMove(e) {
+        if(selectedOption == optionStates.PAN) {
+
+            if(!mouseIsDown) return; // don't pan if mouse is not pressed
+
+            var x = e.offsetX;
+            var y = e.offsetY;
+
+            ctx.setTransform(1, 0, 0, 1,
+                             x - panStartCoords[0], y - panStartCoords[1]);
+
+            invalidate();
+        }
     }
 
     // Sets mx,my to the mouse position relative to the canvas
@@ -150,12 +193,10 @@ var canvasShapes = (function(){
       setInterval(draw, INTERVAL);
 
       // add our events
-      //canvas.onmousedown = myDown;
-      //canvas.onmouseup = myUp;
       canvas.onclick = myClick;
-
-      // add a smaller blue circle
-      //addCircle(25, 90, 25, 25, '#2BB8FF');
+      canvas.onmouseup = myOnMouseUp;
+      canvas.onmousedown = myOnMouseDown;
+      canvas.onmousemove = myOnMouseMove;
     }
 
     return {
