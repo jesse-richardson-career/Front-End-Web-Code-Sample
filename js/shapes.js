@@ -12,7 +12,7 @@ var canvasShapes = (function(){
     var ctx;
     var WIDTH;
     var HEIGHT;
-    var INTERVAL = 20;  // how often, in milliseconds, we check to see if a redraw is needed
+    var INTERVAL = 100;  // how often, in milliseconds, we check to see if a redraw is needed
     var shapes = [];    // holds all of our shapes
 
     var mx, my; // mouse coordinates
@@ -104,12 +104,34 @@ var canvasShapes = (function(){
 
     //wipes the canvas context
     function clear(c) {
-        c.clearRect(0, 0, WIDTH, HEIGHT);
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
     }
 
     function invalidate() {
         canvasValid = false;
     }
+
+
+	var scaleFactor = 1.1;
+
+    function zoom(clicks){
+		// var pt = ctx.transformedPoint(lastX,lastY);
+		// ctx.translate(pt.x,pt.y);
+		var factor = Math.pow(scaleFactor,clicks);
+		ctx.scale(factor,factor);
+		//ctx.translate(-pt.x,-pt.y);
+		invalidate();
+	}
+
+	function myScroll(e) {
+		var delta = e.wheelDelta ? e.wheelDelta/40 : e.detail ? -e.detail : 0;
+		if (delta) zoom(delta);
+		return e.preventDefault() && false;
+	};
+
 
     // adds a new node
     function myClick(e) {
@@ -197,6 +219,8 @@ var canvasShapes = (function(){
       canvas.onmouseup = myOnMouseUp;
       canvas.onmousedown = myOnMouseDown;
       canvas.onmousemove = myOnMouseMove;
+      canvas.addEventListener('DOMMouseScroll',myScroll,false);
+      canvas.addEventListener('mousewheel',myScroll,false);
     }
 
     return {
