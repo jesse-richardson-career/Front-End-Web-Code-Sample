@@ -1,3 +1,11 @@
+// ENUM for the button states
+var optionStates = {
+    TRIANGLE: 0,
+    CIRCLE: 1,
+    PAN: 2
+};
+
+
 var canvasShapes = (function(){
 
     var canvas;
@@ -14,27 +22,62 @@ var canvasShapes = (function(){
     // we want to call invalidate() whenever we make a change
    var canvasValid = false;
 
+   // keep track of the state ofwhat button is selected. Should maybe be broken out into a viewModel?
+   var selectedOption = optionStates.TRIANGLE;
+
+   function setOption(option) {
+       selectedOption = option;
+   }
 
     // Triangle object
     function Triangle() {
         this.x = 0;
         this.y = 0;
-        // default size
-        this.w = 1;
-        this.h = 1;
         this.fill = "#EE0000";
+        this.drawShape = function(){
+            ctx.fillStyle = this.fill;
+
+            var path=new Path2D();
+            path.moveTo(this.x,    this.y-25);
+            path.lineTo(this.x+25, this.y+25);
+            path.lineTo(this.x-25, this.y+25);
+            ctx.fill(path);
+        }
     }
 
     //Initialize a new Triangle, add it, and invalidate the canvas
-    function addTriangle(x, y, w, h, fill) {
+    function addTriangle(x, y, fill) {
       var tri = new Triangle;
       tri.x = x;
       tri.y = y;
-      tri.w = w
-      tri.h = h;
       tri.fill = fill;
 
       shapes.push(tri);
+      invalidate();
+    }
+
+    // Triangle object
+    function Circle() {
+        this.x = 0;
+        this.y = 0;
+        this.fill = "#EE0000";
+        this.drawShape = function(){
+            ctx.fillStyle = this.fill;
+
+            var path=new Path2D();
+            path.arc(this.x, this.y, 25, 0, Math.PI*2, true); // Outer circle
+            ctx.fill(path);
+        }
+    }
+
+    //Initialize a new Circle, add it, and invalidate the canvas
+    function addCircle(x, y, fill) {
+      var cir = new Circle;
+      cir.x = x;
+      cir.y = y;
+      cir.fill = fill;
+
+      shapes.push(cir);
       invalidate();
     }
 
@@ -46,7 +89,7 @@ var canvasShapes = (function(){
             // draw all shapes
             var l = shapes.length;
             for (var i = 0; i < l; i++) {
-                drawshape(ctx, shapes[i], shapes[i].fill);
+                shapes[i].drawShape();
             }
 
             canvasValid = true;
@@ -58,25 +101,16 @@ var canvasShapes = (function(){
         c.clearRect(0, 0, WIDTH, HEIGHT);
     }
 
-    // Draws a single shape to a single context
-    function drawshape(context, shape, fill) {
-        context.fillStyle = fill;
-
-        // We can skip the drawing of elements that have moved off the screen:
-        if (shape.x > WIDTH || shape.y > HEIGHT) return;
-        if (shape.x + shape.w < 0 || shape.y + shape.h < 0) return;
-
-        context.fillRect(shape.x,shape.y,shape.w,shape.h);
-    }
-
     // adds a new node
     function myClick(e) {
         getMouse(e);
-        // for this method width and height determine the starting X and Y, too.
-        // so I left them as vars in case someone wanted to make them args for something and copy this code
-        var width = 20;
-        var height = 20;
-        addTriangle(mx - (width / 2), my - (height / 2), width, height, randHexColor());
+
+        if(selectedOption == optionStates.TRIANGLE) {
+            addTriangle(mx, my, randHexColor());
+        }
+        else if (selectedOption == optionStates.CIRCLE) {
+            addCircle(mx, my, randHexColor());
+        }
     }
 
     function invalidate() {
@@ -126,18 +160,17 @@ var canvasShapes = (function(){
 
     return {
         init: init,
-        addTriangle: addTriangle
+        setOption: setOption
     };
 
 })();
 
-
 $(function() {
     canvasShapes.init();
+
+    //events handlers
+    $("#triangleButton").click(function(){canvasShapes.setOption(optionStates.TRIANGLE)});
+    $("#circleButton").click(function(){canvasShapes.setOption(optionStates.CIRCLE)});
+    $("#panButton").click(function(){canvasShapes.setOption(optionStates.PAN)});
+
 });
-
-
-//events handlers
-//$("#triangleButton").click(graphicsShapes.drawTriangle());
-
-//$("#circleButton").click(graphicsShapes.drawCircle());
